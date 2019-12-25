@@ -6,6 +6,6 @@ This R Shiny app allows interactive visualization of Chicago crime between 2001 
 
 In this app, users are able to select a specific Chicago district and range of years of interest. At least one primary type of crime can also be chosen.
 
-The following link will direct you to the app: 
+The following link will direct you to the app: https://daraeoh.shinyapps.io/chicagocrime/
 
 [See R code](crimeapp.Rmd)
