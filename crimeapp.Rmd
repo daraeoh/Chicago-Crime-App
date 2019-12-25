@@ -60,7 +60,12 @@ crime <- read_csv("https://raw.githubusercontent.com/daraeoh/Chicago-Crime-App/m
 ```
 
 ```{r}
-x_axis <- input_slider(min = 2001, max = 2019, value = c(2001, 2019), label = "Range of Years", sep = "")
+x_axis <- input_slider(
+  min = 2001, 
+  max = 2019, 
+  value = c(2001, 2019), 
+  label = "Range of Years", 
+  sep = "")
 
 if (interactive()) {
 
@@ -96,8 +101,17 @@ runApp(list(
       add_tooltip(function(crime){paste0(
         "arrests: ", round(crime$arrests), "<br>",
         "year: ", round(crime$year))}) %>%
-      add_axis("y", title_offset = 40, title = "Number of Arrests", properties = axis_props(title = list(fontSize = 15))) %>%
-      add_axis("x", title_offset = 40, title = "Year", properties = axis_props(title = list(fontSize = 15)), format = "####") %>%
+      add_axis(
+        "y", 
+        title_offset = 40, 
+        title = "Number of Arrests", 
+        properties = axis_props(title = list(fontSize = 15))) %>%
+      add_axis(
+        "x", 
+        title_offset = 40, 
+        title = "Year", 
+        properties = axis_props(title = list(fontSize = 15)), 
+        format = "####") %>%
       add_legend("fill", title = "Primary Type of Crime") %>%
       bind_shiny("p", "p_ui")
       }
