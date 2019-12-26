@@ -8,4 +8,4 @@ In this app, users are able to select a specific Chicago district and range of y
 
 The following link will direct you to the app: https://daraeoh.shinyapps.io/chicagocrime/
 
-[See R code](crimeapp.Rmd)
+[See R code](https://github.com/daraeoh/Chicago-Crime-App/blob/master/crimeapp.R)
