@@ -11,11 +11,11 @@ library(shiny)
 library(gapminder)
 library(RSocrata)
 library(lubridate)
+library(magrittr)
 
 
 #reading data from github
 crime <- read_csv("https://raw.githubusercontent.com/daraeoh/Chicago-Crime-App/master/crime.csv")
-
 
 #Data Cleaning
 
@@ -42,6 +42,12 @@ crime$district[crime$district == "22"] <- "22 - Morgan Park"
 crime$district[crime$district == "24"] <- "24 - Rogers Park"
 crime$district[crime$district == "25"] <- "25 - Grand Central"
 
+crime$primary_type[crime$primary_type == "NON-CRIMINAL (SUBJECT SPECIFIED)"] <- "NON-CRIMINAL"
+crime$primary_type[crime$primary_type == "NON - CRIMINAL"] <- "NON-CRIMINAL"
+
+crime$district <- as.factor(crime$district)
+crime$arrests <- as.integer(crime$arrests)
+
 
 # Define UI
 
@@ -63,47 +69,50 @@ ui <- fluidPage(
             
             # Inputs
             sidebarPanel(
-                
-                # Select district number
-                selectInput(inputId = "district",
-                            label = "District",
-                            choices = c("1 - Central", "2 - Wentworth", "3 - Grand Crossing", "4 - South Chicago", "5 - Calumet",
-                                        "6 - Gresham", "7 - Englewood", "8 - Chicago Lawn", "9 - Deering", "10 - Ogden", 
-                                        "11 - Harrison", "12 - Near West", "14 - Shakespeare", "15 - Austin", 
-                                        "16 - Jefferson Park", "17 - Albany Park", "18 - Near North", "19 - Town Hall", 
-                                        "20 - Lincoln", "21", "22 - Morgan Park", "24 - Rogers Park", 
-                                        "25 - Grand Central", "31") %>% unique(),
-                            selected = "1 - Central"),
-                
-                # Slide year range
-                sliderInput(inputId = "year",
-                            label = "Range of years",
-                            min = 2001,
-                            max = 2019,
-                            value = c(2001, 2019), 
-                            sep = ""),
-                
-                # Select crime type
-                checkboxGroupInput(inputId = "primary_type",
-                                   label = "Choose a primary type of crime",
-                                   choices = c("ARSON", "ASSAULT", "BATTERY", "BURGLARY", "CONCEALED CARRY LICENSE VIOLATION", 
-                                               "CRIMINAL DAMAGE", "CRIMINAL TRESPASS", "CRIM SEXUAL ASSAULT", "DECEPTIVE PRACTICE", 
-                                               "GAMBLING", "HOMICIDE", "INTERFERENCE WITH PUBLIC OFFICER", "INTIMIDATION", 
-                                               "KIDNAPPING", "LIQUOR LAW VIOLATION", "MOTOR VEHICLE THEFT", "NARCOTICS", 
-                                               "NON-CRIMINAL (SUBJECT SPECIFIED)", "OBSCENITY", "OTHER NARCOTIC VIOLATION", 
-                                               "OTHER OFFENSE", "OFFENSE INVOLVING CHILDREN", "PROSTITUTION", "PUBLIC INDECENCY", 
-                                               "PUBLIC PEACE VIOLATION", "ROBBERY", "SEX OFFENSE", "STALKING", "THEFT", "WEAPONS VIOLATION"),
-                                   selected = "ARSON")
+                fluidRow(column = 4,
+                         # Select smooth method
+                         selectInput(inputId = "method",
+                                     label = "Smooth method",
+                                     choices = c("None", "loess", "lm"),
+                                     selected = "None"),
+                         
+                         # Select district number
+                         selectInput(inputId = "district",
+                                     label = "District",
+                                     choices = unique(c("1 - Central", "2 - Wentworth", "3 - Grand Crossing", "4 - South Chicago", "5 - Calumet",
+                                                 "6 - Gresham", "7 - Englewood", "8 - Chicago Lawn", "9 - Deering", "10 - Ogden", 
+                                                 "11 - Harrison", "12 - Near West", "14 - Shakespeare", "15 - Austin", 
+                                                 "16 - Jefferson Park", "17 - Albany Park", "18 - Near North", "19 - Town Hall", 
+                                                 "20 - Lincoln", "21", "22 - Morgan Park", "24 - Rogers Park", 
+                                                 "25 - Grand Central", "31")),
+                                     selected = "1 - Central"),
+                         
+                         # Slide year range
+                         sliderInput(inputId = "year",
+                                     label = "Range of years",
+                                     min = 2001,
+                                     max = 2019,
+                                     value = c(2001, 2019), 
+                                     sep = ""),
+                         
+                         # Select crime type
+                         checkboxGroupInput(inputId = "primary_type",
+                                            label = "Choose a primary type of crime",
+                                            choices = crime$primary_type %>% unique() %>% sort(),
+                                            selected = "ARSON")),
             ),
-            
-            # Outputs
-            mainPanel(
-                position = "left",
-                plotlyOutput(outputId = "scatterplot")
+                
+                # Outputs
+                column(8,
+                       mainPanel(
+                           position = "left",
+                           plotlyOutput(outputId = "scatterplot")
+                       )
+                )
             )
         )
     )
-)
+
 
 
 # Server
@@ -114,16 +123,16 @@ server <- function(input, output) {
     # Create data
     crime2 <- reactive({
         crime %>%
-            filter(district == as.vector(input$district)) %>%
-            filter(year >= as.integer(input$year[1]) & year <= as.integer(input$year[2])) %>%
-            filter(primary_type == input$primary_type)
+            filter(district == input$district) %>%
+            filter(year >= input$year[1] & year <= input$year[2]) %>%
+            filter(primary_type %in% c(input$primary_type))
     })
     
     # Create scatterplot object
     output$scatterplot <- renderPlotly({
         p <- ggplot(data = crime2(), aes(x = year, y = arrests)) +
             geom_point(aes(color = primary_type)) +
-            geom_smooth(method = 'loess') +
+            geom_smooth(aes(x = year, y = arrests), method = input$method) +
             theme_light() +
             labs(title = paste0("Chicago Crimes in District ", input$district),
                  x = "Year",
